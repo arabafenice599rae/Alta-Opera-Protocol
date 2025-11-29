@@ -22,8 +22,9 @@ contract AltaOpera is ERC20, Ownable, ReentrancyGuard {
     error SupplyUnderflow();
 
     // -------- Curve parameters --------
-    // Price on whole tokens: P(s) = a * s^2 + b
-    // We store aOver3 = a / 3 to use the exact integral form.
+    // Price: P(s) = a * (s/1e18)^2 + b, where s is total supply in 18-decimal units.
+    // We store aOver3 = a / 3 to use the exact integral form:
+    // ∫(a s^2 + b) ds = (a/3) s^3 + b s  (in continuous terms).
     uint256 public immutable aOver3; // effective quadratic coefficient (a/3)
     uint256 public immutable b;      // base price in wei
 
@@ -52,7 +53,7 @@ contract AltaOpera is ERC20, Ownable, ReentrancyGuard {
     );
 
     event FeeUpdated(uint256 newFeeBps);
-    event TreasuryUpdated(address newTreasury);
+    event TreasuryUpdated(address indexed newTreasury);
     event Withdrawn(address indexed to, uint256 amount);
 
     constructor(
@@ -63,7 +64,7 @@ contract AltaOpera is ERC20, Ownable, ReentrancyGuard {
         address initialOwner
     )
         ERC20("AltaOpera", "ALTA")
-        Ownable(initialOwner) // ✅ correct for OpenZeppelin 5.x
+        Ownable(initialOwner) // OpenZeppelin v5 style
     {
         if (_a == 0 || _a % 3 != 0) revert InvalidA();
         if (_b == 0) revert InvalidB();
@@ -84,7 +85,7 @@ contract AltaOpera is ERC20, Ownable, ReentrancyGuard {
     //                      CURVE / COST
     // =========================================================
 
-    /// @notice Integral cost to move from startSupply to startSupply + amount
+    /// @notice Integral cost in ETH to move from startSupply to startSupply + amount
     /// @dev startSupply and amount are in 18-decimal units (wad)
     function _calculateCost(uint256 startSupply, uint256 amount)
         internal
@@ -100,15 +101,15 @@ contract AltaOpera is ERC20, Ownable, ReentrancyGuard {
         // Compute s^3 / ONE^3 using mulDiv to control overflow:
         //   s^2 / ONE      -> t
         //   t * s / ONE^2  -> s^3 / ONE^3
-        uint256 s0_sq_div = Math.mulDiv(s0, s0, ONE);        // s0^2 / ONE
+        uint256 s0_sq_div = Math.mulDiv(s0, s0, ONE);             // s0^2 / ONE
         uint256 s0_cube_div = Math.mulDiv(s0_sq_div, s0, ONE_SQ); // s0^3 / ONE^3
 
-        uint256 s1_sq_div = Math.mulDiv(s1, s1, ONE);        // s1^2 / ONE
+        uint256 s1_sq_div = Math.mulDiv(s1, s1, ONE);             // s1^2 / ONE
         uint256 s1_cube_div = Math.mulDiv(s1_sq_div, s1, ONE_SQ); // s1^3 / ONE^3
 
-        uint256 cubicDiff_div = s1_cube_div - s0_cube_div;   // (s1^3 - s0^3) / ONE^3
+        uint256 cubicDiff_div = s1_cube_div - s0_cube_div;        // (s1^3 - s0^3) / ONE^3
 
-        // cubic term: aOver3 * ((s1^3 - s0^3) / ONE^3)
+        // cubic term: (a/3) * ((s1^3 - s0^3) / ONE^3)
         uint256 cubicTerm = aOver3 * cubicDiff_div;
 
         // linear term: b * (s1 - s0) / ONE  ==  b * amount / ONE
@@ -268,11 +269,27 @@ contract AltaOpera is ERC20, Ownable, ReentrancyGuard {
         netRefund = baseRefund - fee;
     }
 
-    /// @notice Current spot price for 1 whole token on the curve (approximate, whole-token view)
+    /// @notice Current spot price for 1 token (18 decimals) at the exact current supply
     function getCurrentPrice() external view returns (uint256) {
-        uint256 S = totalSupply() / ONE;     // whole tokens
-        uint256 aFull = aOver3 * 3;          // reconstruct a
-        return aFull * S * S + b;
+        uint256 s = totalSupply();                // 18 decimals
+        uint256 aFull = aOver3 * 3;               // reconstruct a
+        uint256 s2 = Math.mulDiv(s, s, ONE);      // s^2 / 1e18
+        // P(s) = a * (s/1e18)^2 + b  =>  a * s2 / 1e18 + b
+        return Math.mulDiv(aFull, s2, ONE) + b;
+    }
+
+    /// @notice Average buy price per token for a hypothetical buy of `amount`
+    function getAverageBuyPrice(uint256 amount) external view returns (uint256) {
+        if (amount == 0) revert AmountZero();
+        uint256 cost = _calculateCost(totalSupply(), amount);
+        // price per token (18 decimals) in wei
+        return Math.mulDiv(cost, ONE, amount);
+    }
+
+    /// @notice Exact marginal price for buying 1 full token (1e18 units) at current supply
+    function getMarginalPrice() external view returns (uint256) {
+        // cost in wei to buy exactly 1 ALTA (1e18 units) from current supply
+        return _calculateCost(totalSupply(), ONE);
     }
 
     receive() external payable {}
