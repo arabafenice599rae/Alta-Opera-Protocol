@@ -1,5 +1,5 @@
 
-# AltaOpera 🎭
+# AltaOpera 
 
 **AltaOpera** is an on-chain liquidity engine built on a **quadratic bonding curve**.
 
@@ -13,7 +13,7 @@ This repository contains the core **AltaOpera** bonding-curve ERC20 contract.
 
 ---
 
-## ✨ Core idea
+## Core idea
 
 > Liquidity by math, not by promises.
 
@@ -33,7 +33,7 @@ AltaOpera flips this model:
 
 ---
 
-## 🧠 How the bonding curve works
+##  How the bonding curve works
 
 AltaOpera uses a quadratic price function of the form:
 
@@ -50,7 +50,7 @@ It computes the ETH cost/refund between two supply levels with a closed-form for
 
 ---
 
-## 💧 Internal ETH reserve
+##  Internal ETH reserve
 
 The AltaOpera contract acts as:
 
