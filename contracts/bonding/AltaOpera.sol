@@ -3,7 +3,8 @@ pragma solidity ^0.8.27;
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 /// @title AltaOpera – Quadratic bonding curve ERC20 with internal ETH reserve
 contract AltaOpera is ERC20, Ownable, ReentrancyGuard {
@@ -28,6 +29,7 @@ contract AltaOpera is ERC20, Ownable, ReentrancyGuard {
 
     // 1 whole token (18 decimals)
     uint256 public constant ONE = 1e18;
+    uint256 public constant ONE_SQ = 1e36;
 
     // -------- Fee & treasury --------
     // feeBps in basis points: 100 = 1%, 500 = 5% (max)
@@ -51,6 +53,7 @@ contract AltaOpera is ERC20, Ownable, ReentrancyGuard {
 
     event FeeUpdated(uint256 newFeeBps);
     event TreasuryUpdated(address newTreasury);
+    event Withdrawn(address indexed to, uint256 amount);
 
     constructor(
         uint256 _a,          // "mathematical" a (MUST be multiple of 3)
@@ -58,7 +61,10 @@ contract AltaOpera is ERC20, Ownable, ReentrancyGuard {
         uint256 _feeBps,     // e.g. 500 = 5%
         address _treasury,
         address initialOwner
-    ) ERC20("AltaOpera", "ALTA") Ownable(initialOwner) {
+    )
+        ERC20("AltaOpera", "ALTA")
+        Ownable(initialOwner) // ✅ correct for OpenZeppelin 5.x
+    {
         if (_a == 0 || _a % 3 != 0) revert InvalidA();
         if (_b == 0) revert InvalidB();
         if (_feeBps > 500) revert FeeTooHigh();
@@ -78,8 +84,8 @@ contract AltaOpera is ERC20, Ownable, ReentrancyGuard {
     //                      CURVE / COST
     // =========================================================
 
-    /// @notice integral cost to move from startSupply to startSupply + amount
-    /// @dev startSupply and amount are in 18-decimal units
+    /// @notice Integral cost to move from startSupply to startSupply + amount
+    /// @dev startSupply and amount are in 18-decimal units (wad)
     function _calculateCost(uint256 startSupply, uint256 amount)
         internal
         view
@@ -87,39 +93,35 @@ contract AltaOpera is ERC20, Ownable, ReentrancyGuard {
     {
         if (amount == 0) return 0;
 
-        // supply and amount in whole tokens + remainder
-        uint256 S = startSupply / ONE;   // initial whole tokens
-        uint256 D = amount / ONE;        // whole tokens to integrate
-        uint256 R = amount % ONE;        // fractional remainder
+        // s0 and s1 expressed in wad (18 decimals)
+        uint256 s0 = startSupply;
+        uint256 s1 = startSupply + amount;
 
-        // 1) Whole part: exact integral of (a*x^2 + b) from S to S + D
-        if (D > 0) {
-            uint256 S2 = S * S;
-            uint256 D2 = D * D;
+        // Compute s^3 / ONE^3 using mulDiv to control overflow:
+        //   s^2 / ONE      -> t
+        //   t * s / ONE^2  -> s^3 / ONE^3
+        uint256 s0_sq_div = Math.mulDiv(s0, s0, ONE);        // s0^2 / ONE
+        uint256 s0_cube_div = Math.mulDiv(s0_sq_div, s0, ONE_SQ); // s0^3 / ONE^3
 
-            // (S + D)^3 - S^3 = 3*S^2*D + 3*S*D^2 + D^3
-            uint256 cubicDiff = 3 * S2 * D + 3 * S * D2 + D2 * D;
+        uint256 s1_sq_div = Math.mulDiv(s1, s1, ONE);        // s1^2 / ONE
+        uint256 s1_cube_div = Math.mulDiv(s1_sq_div, s1, ONE_SQ); // s1^3 / ONE^3
 
-            uint256 aContrib = aOver3 * cubicDiff; // a/3 * ((S+D)^3 - S^3)
-            uint256 bContrib = b * D;              // b * D
+        uint256 cubicDiff_div = s1_cube_div - s0_cube_div;   // (s1^3 - s0^3) / ONE^3
 
-            cost = aContrib + bContrib;
-        }
+        // cubic term: aOver3 * ((s1^3 - s0^3) / ONE^3)
+        uint256 cubicTerm = aOver3 * cubicDiff_div;
 
-        // 2) Fractional part: linear approximation at final point S + D
-        if (R > 0) {
-            uint256 Sfinal = S + D;
-            uint256 aFull = aOver3 * 3; // reconstruct a
-            uint256 priceAtFinal = aFull * Sfinal * Sfinal + b;
-            cost += (priceAtFinal * R) / ONE;
-        }
+        // linear term: b * (s1 - s0) / ONE  ==  b * amount / ONE
+        uint256 linearTerm = Math.mulDiv(b, (s1 - s0), ONE);
+
+        cost = cubicTerm + linearTerm;
     }
 
     // =========================================================
     //                          BUY
     // =========================================================
 
-    /// @notice Buy `amount` AltaOpera (18 decimals) paying ETH, with fee
+    /// @notice Buy `amount` ALTA (18 decimals) paying ETH, with fee
     function buy(uint256 amount) external payable nonReentrant {
         if (amount == 0) revert AmountZero();
 
@@ -155,7 +157,7 @@ contract AltaOpera is ERC20, Ownable, ReentrancyGuard {
     //                          SELL
     // =========================================================
 
-    /// @notice Sell `amount` AltaOpera for ETH (burn + refund), with fee
+    /// @notice Sell `amount` ALTA for ETH (burn + refund), with fee
     function sell(uint256 amount) external nonReentrant {
         if (amount == 0) revert AmountZero();
 
@@ -163,6 +165,7 @@ contract AltaOpera is ERC20, Ownable, ReentrancyGuard {
         if (userBalance < amount) revert InsufficientBalance();
 
         uint256 currentSupply = totalSupply();
+        if (currentSupply < amount) revert SupplyUnderflow();
 
         uint256 baseRefund = _calculateCost(currentSupply - amount, amount);
 
@@ -217,6 +220,8 @@ contract AltaOpera is ERC20, Ownable, ReentrancyGuard {
 
         (bool ok, ) = to.call{value: amount}("");
         require(ok, "Withdraw failed");
+
+        emit Withdrawn(to, amount);
     }
 
     // =========================================================
@@ -263,10 +268,10 @@ contract AltaOpera is ERC20, Ownable, ReentrancyGuard {
         netRefund = baseRefund - fee;
     }
 
-    /// @notice Current spot price for 1 whole token on the curve
+    /// @notice Current spot price for 1 whole token on the curve (approximate, whole-token view)
     function getCurrentPrice() external view returns (uint256) {
-        uint256 S = totalSupply() / ONE;
-        uint256 aFull = aOver3 * 3; // reconstruct a
+        uint256 S = totalSupply() / ONE;     // whole tokens
+        uint256 aFull = aOver3 * 3;          // reconstruct a
         return aFull * S * S + b;
     }
 
