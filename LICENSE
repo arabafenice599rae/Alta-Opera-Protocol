@@ -1,0 +1,76 @@
+Alta Opera Source License v1.0
+Copyright (c) 2025 arabafenice599rae. All rights reserved.
+
+1. Definitions
+
+"Software" means the source code, object code, and any associated
+documentation contained in this repository.
+
+"Licensor" means the copyright holder identified above.
+
+"You" means any person or entity that accesses, views, or uses the Software.
+
+2. Grant of Permission
+
+Subject to the terms of this License, the Licensor grants You a limited,
+non-exclusive, non-transferable, revocable license to:
+
+  a) View and read the Software; and
+  b) Use the Software solely for the purposes of evaluation,
+     security review, and auditing.
+
+No other rights or licenses are granted, whether express or implied.
+
+3. Prohibited Uses
+
+Without the prior written permission of the Licensor, You MAY NOT:
+
+  a) Use the Software, in whole or in part, in any product, protocol,
+     smart contract, or service, whether commercial or non-commercial;
+
+  b) Deploy the Software, or any modified or derivative version of it,
+     to any blockchain, testnet, or other network;
+
+  c) Copy, modify, fork, merge, publish, distribute, sublicense,
+     and/or sell copies of the Software;
+
+  d) Create derivative works based on the Software.
+
+Any use of the Software in violation of this section is strictly prohibited
+and constitutes infringement of the Licensor's rights.
+
+4. Ownership
+
+The Software is protected by copyright and other intellectual property laws.
+All rights, title, and interest in and to the Software are and shall remain
+with the Licensor.
+
+Nothing in this License shall be interpreted as a transfer of ownership
+or as granting any rights other than those expressly stated.
+
+5. No Warranty
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
+
+IN NO EVENT SHALL THE LICENSOR BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING
+FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+
+6. Termination
+
+This License and the permissions granted herein shall automatically terminate
+if You breach any of its terms.
+
+Upon termination, You must immediately cease all use of the Software and
+destroy all copies in Your possession or control.
+
+The Licensor may pursue any other remedies available at law or in equity.
+
+7. Governing Law
+
+This License shall be governed by and construed in accordance with the laws
+of the jurisdiction chosen by the Licensor, without regard to its conflict
+of law principles.
