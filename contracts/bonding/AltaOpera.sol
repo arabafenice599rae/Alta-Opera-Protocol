@@ -1,0 +1,274 @@
+// SPDX-License-Identifier: AltaOpera-Source-1.0
+pragma solidity ^0.8.27;
+
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+
+/// @title AltaOpera – Quadratic bonding curve ERC20 with internal ETH reserve
+contract AltaOpera is ERC20, Ownable, ReentrancyGuard {
+    // -------- Custom errors --------
+    error AmountZero();
+    error InsufficientEth();
+    error InsufficientBalance();
+    error PoolBalanceTooLow();
+    error NoExcess();
+    error FeeTooHigh();
+    error ZeroAddress();
+    error WithdrawAmountTooHigh();
+    error InvalidA();
+    error InvalidB();
+    error SupplyUnderflow();
+
+    // -------- Curve parameters --------
+    // Price on whole tokens: P(s) = a * s^2 + b
+    // We store aOver3 = a / 3 to use the exact integral form.
+    uint256 public immutable aOver3; // effective quadratic coefficient (a/3)
+    uint256 public immutable b;      // base price in wei
+
+    // 1 whole token (18 decimals)
+    uint256 public constant ONE = 1e18;
+
+    // -------- Fee & treasury --------
+    // feeBps in basis points: 100 = 1%, 500 = 5% (max)
+    uint256 public feeBps;
+    address public treasury;
+
+    // -------- Events --------
+    event Bought(
+        address indexed buyer,
+        uint256 amount,
+        uint256 baseCost,
+        uint256 fee
+    );
+
+    event Sold(
+        address indexed seller,
+        uint256 amount,
+        uint256 netRefund,
+        uint256 fee
+    );
+
+    event FeeUpdated(uint256 newFeeBps);
+    event TreasuryUpdated(address newTreasury);
+
+    constructor(
+        uint256 _a,          // "mathematical" a (MUST be multiple of 3)
+        uint256 _b,          // e.g. 1e14 = 0.0001 ETH
+        uint256 _feeBps,     // e.g. 500 = 5%
+        address _treasury,
+        address initialOwner
+    ) ERC20("AltaOpera", "ALTA") Ownable(initialOwner) {
+        if (_a == 0 || _a % 3 != 0) revert InvalidA();
+        if (_b == 0) revert InvalidB();
+        if (_feeBps > 500) revert FeeTooHigh();
+        if (_treasury == address(0)) revert ZeroAddress();
+
+        aOver3 = _a / 3;
+        b = _b;
+        feeBps = _feeBps;
+        treasury = _treasury;
+    }
+
+    function decimals() public pure override returns (uint8) {
+        return 18;
+    }
+
+    // =========================================================
+    //                      CURVE / COST
+    // =========================================================
+
+    /// @notice integral cost to move from startSupply to startSupply + amount
+    /// @dev startSupply and amount are in 18-decimal units
+    function _calculateCost(uint256 startSupply, uint256 amount)
+        internal
+        view
+        returns (uint256 cost)
+    {
+        if (amount == 0) return 0;
+
+        // supply and amount in whole tokens + remainder
+        uint256 S = startSupply / ONE;   // initial whole tokens
+        uint256 D = amount / ONE;        // whole tokens to integrate
+        uint256 R = amount % ONE;        // fractional remainder
+
+        // 1) Whole part: exact integral of (a*x^2 + b) from S to S + D
+        if (D > 0) {
+            uint256 S2 = S * S;
+            uint256 D2 = D * D;
+
+            // (S + D)^3 - S^3 = 3*S^2*D + 3*S*D^2 + D^3
+            uint256 cubicDiff = 3 * S2 * D + 3 * S * D2 + D2 * D;
+
+            uint256 aContrib = aOver3 * cubicDiff; // a/3 * ((S+D)^3 - S^3)
+            uint256 bContrib = b * D;              // b * D
+
+            cost = aContrib + bContrib;
+        }
+
+        // 2) Fractional part: linear approximation at final point S + D
+        if (R > 0) {
+            uint256 Sfinal = S + D;
+            uint256 aFull = aOver3 * 3; // reconstruct a
+            uint256 priceAtFinal = aFull * Sfinal * Sfinal + b;
+            cost += (priceAtFinal * R) / ONE;
+        }
+    }
+
+    // =========================================================
+    //                          BUY
+    // =========================================================
+
+    /// @notice Buy `amount` AltaOpera (18 decimals) paying ETH, with fee
+    function buy(uint256 amount) external payable nonReentrant {
+        if (amount == 0) revert AmountZero();
+
+        uint256 currentSupply = totalSupply();
+        uint256 baseCost = _calculateCost(currentSupply, amount);
+
+        uint256 feeBpsLocal = feeBps;
+        uint256 fee = (baseCost * feeBpsLocal) / 10_000;
+        uint256 totalCost = baseCost + fee;
+
+        if (msg.value < totalCost) revert InsufficientEth();
+
+        // EFFECTS
+        _mint(msg.sender, amount);
+
+        // INTERACTIONS
+        address treasuryLocal = treasury;
+        if (fee > 0) {
+            (bool okT, ) = treasuryLocal.call{value: fee}("");
+            require(okT, "Fee transfer failed");
+        }
+
+        uint256 refund = msg.value - totalCost;
+        if (refund > 0) {
+            (bool okR, ) = msg.sender.call{value: refund}("");
+            require(okR, "Refund failed");
+        }
+
+        emit Bought(msg.sender, amount, baseCost, fee);
+    }
+
+    // =========================================================
+    //                          SELL
+    // =========================================================
+
+    /// @notice Sell `amount` AltaOpera for ETH (burn + refund), with fee
+    function sell(uint256 amount) external nonReentrant {
+        if (amount == 0) revert AmountZero();
+
+        uint256 userBalance = balanceOf(msg.sender);
+        if (userBalance < amount) revert InsufficientBalance();
+
+        uint256 currentSupply = totalSupply();
+
+        uint256 baseRefund = _calculateCost(currentSupply - amount, amount);
+
+        uint256 feeBpsLocal = feeBps;
+        uint256 fee = (baseRefund * feeBpsLocal) / 10_000;
+        uint256 netRefund = baseRefund - fee;
+
+        uint256 poolBalance = address(this).balance;
+        if (poolBalance < baseRefund) revert PoolBalanceTooLow();
+
+        // EFFECTS
+        _burn(msg.sender, amount);
+
+        // INTERACTIONS
+        address treasuryLocal = treasury;
+        if (fee > 0) {
+            (bool okT, ) = treasuryLocal.call{value: fee}("");
+            require(okT, "Fee transfer failed");
+        }
+
+        (bool okR, ) = msg.sender.call{value: netRefund}("");
+        require(okR, "Refund failed");
+
+        emit Sold(msg.sender, amount, netRefund, fee);
+    }
+
+    // =========================================================
+    //                       RESERVE & WITHDRAW
+    // =========================================================
+
+    /// @notice Theoretical reserve required if all current supply was bought via the curve
+    function getReserveRequirement() public view returns (uint256) {
+        return _calculateCost(0, totalSupply());
+    }
+
+    /// @notice Owner can withdraw only the excess above the required reserve
+    function withdraw(address payable to, uint256 amount)
+        external
+        onlyOwner
+        nonReentrant
+    {
+        if (to == address(0)) revert ZeroAddress();
+        if (amount == 0) revert AmountZero();
+
+        uint256 reserve = getReserveRequirement();
+        uint256 balance = address(this).balance;
+
+        if (balance <= reserve) revert NoExcess();
+
+        uint256 excess = balance - reserve;
+        if (amount > excess) revert WithdrawAmountTooHigh();
+
+        (bool ok, ) = to.call{value: amount}("");
+        require(ok, "Withdraw failed");
+    }
+
+    // =========================================================
+    //                     FEE / TREASURY PARAMS
+    // =========================================================
+
+    /// @notice Update fee (not the curve), up to 5%
+    function updateFee(uint256 newFeeBps) external onlyOwner {
+        if (newFeeBps > 500) revert FeeTooHigh();
+        feeBps = newFeeBps;
+        emit FeeUpdated(newFeeBps);
+    }
+
+    /// @notice Update treasury address
+    function updateTreasury(address newTreasury) external onlyOwner {
+        if (newTreasury == address(0)) revert ZeroAddress();
+        treasury = newTreasury;
+        emit TreasuryUpdated(newTreasury);
+    }
+
+    // =========================================================
+    //                          QUOTES
+    // =========================================================
+
+    /// @notice Total (base + fee) ETH required to buy `amount`
+    function quoteBuy(uint256 amount) external view returns (uint256 totalCost) {
+        if (amount == 0) revert AmountZero();
+
+        uint256 currentSupply = totalSupply();
+        uint256 baseCost = _calculateCost(currentSupply, amount);
+        uint256 fee = (baseCost * feeBps) / 10_000;
+        totalCost = baseCost + fee;
+    }
+
+    /// @notice Net ETH (after fee) received when selling `amount`
+    function quoteSell(uint256 amount) external view returns (uint256 netRefund) {
+        if (amount == 0) revert AmountZero();
+
+        uint256 currentSupply = totalSupply();
+        if (currentSupply < amount) revert SupplyUnderflow();
+
+        uint256 baseRefund = _calculateCost(currentSupply - amount, amount);
+        uint256 fee = (baseRefund * feeBps) / 10_000;
+        netRefund = baseRefund - fee;
+    }
+
+    /// @notice Current spot price for 1 whole token on the curve
+    function getCurrentPrice() external view returns (uint256) {
+        uint256 S = totalSupply() / ONE;
+        uint256 aFull = aOver3 * 3; // reconstruct a
+        return aFull * S * S + b;
+    }
+
+    receive() external payable {}
+}
