@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -7,15 +8,16 @@
   <meta name="description" content="AltaOpera is a quadratic bonding curve ERC20 with on-chain exit liquidity guaranteed by the contract. No DEX pools, no LP withdrawals, just pure mathematics.">
 
   <!-- Open Graph / Social Media Tags -->
+
   <meta property="og:title" content="AltaOpera – Liquidity by Math">
   <meta property="og:description" content="Quadratic bonding curve ERC20 with on-chain exit liquidity. The contract itself is the market maker.">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://arabafenice599rae.github.io/Alta-Opera-Protocol/">
+  <meta property="og:url" content="https://altaopera.com">
   <meta name="twitter:card" content="summary_large_image">
 
-  <!-- Optional preconnect (no fonts loaded yet, ma va bene lo stesso) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Chart.js -->
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
   <style>
     :root {
@@ -27,17 +29,19 @@
       --text-muted: #888;
       --border-color: #444;
       --border-hover: #666;
-
+      --success-color: #4ade80;
+      --error-color: #f87171;
+      
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
       color-scheme: dark;
     }
-
+    
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-
+    
     body {
       min-height: 100vh;
       background: radial-gradient(ellipse at top, var(--bg-gradient-start) 0%, var(--bg-dark) 45%, #000 100%);
@@ -45,7 +49,7 @@
       overflow-x: hidden;
       position: relative;
     }
-
+    
     /* Animated background effect */
     body::before {
       content: '';
@@ -59,18 +63,18 @@
       opacity: 0.5;
       pointer-events: none;
     }
-
+    
     @keyframes pulse {
       0%, 100% { transform: scale(1) rotate(0deg); }
       50% { transform: scale(1.1) rotate(180deg); }
     }
-
+    
     .container {
       max-width: 1200px;
       margin: 0 auto;
       padding: 0 1.5rem;
     }
-
+    
     .hero {
       min-height: 100vh;
       display: flex;
@@ -81,7 +85,7 @@
       position: relative;
       z-index: 1;
     }
-
+    
     .pill {
       display: inline-flex;
       align-items: center;
@@ -97,7 +101,7 @@
       backdrop-filter: blur(10px);
       animation: fadeInUp 0.6s ease-out;
     }
-
+    
     .pill .dot {
       width: 8px;
       height: 8px;
@@ -106,12 +110,12 @@
       box-shadow: 0 0 10px var(--primary-color);
       animation: glow 2s ease-in-out infinite;
     }
-
+    
     @keyframes glow {
       0%, 100% { opacity: 0.8; }
       50% { opacity: 1; box-shadow: 0 0 15px var(--primary-color); }
     }
-
+    
     h1 {
       font-size: clamp(2.8rem, 6vw, 4rem);
       font-weight: 800;
@@ -120,7 +124,7 @@
       letter-spacing: -0.02em;
       animation: fadeInUp 0.8s ease-out 0.1s both;
     }
-
+    
     h2 {
       font-weight: 400;
       color: var(--text-secondary);
@@ -128,34 +132,32 @@
       font-size: clamp(1.1rem, 2.5vw, 1.4rem);
       line-height: 1.5;
       max-width: 720px;
-      margin-left: auto;
-      margin-right: auto;
       animation: fadeInUp 0.8s ease-out 0.2s both;
     }
-
+    
     .content {
       max-width: 680px;
       margin: 0 auto;
       animation: fadeInUp 0.8s ease-out 0.3s both;
     }
-
+    
     .content p {
       margin: 1rem 0;
       color: var(--text-secondary);
       line-height: 1.7;
       font-size: 1rem;
     }
-
+    
     .content strong {
       color: var(--text-primary);
       font-weight: 600;
     }
-
+    
     .highlight {
       color: var(--primary-color);
       font-weight: 600;
     }
-
+    
     .buttons {
       margin-top: 2.5rem;
       display: flex;
@@ -164,7 +166,7 @@
       gap: 1rem;
       animation: fadeInUp 0.8s ease-out 0.4s both;
     }
-
+    
     .btn {
       display: inline-flex;
       align-items: center;
@@ -180,40 +182,422 @@
       position: relative;
       overflow: hidden;
     }
-
+    
     .btn-primary {
       background: var(--text-primary);
       color: var(--bg-dark);
       border-color: var(--text-primary);
     }
-
+    
     .btn-primary:hover {
       transform: translateY(-2px);
       box-shadow: 0 12px 24px rgba(60, 227, 255, 0.2);
       background: #fff;
     }
-
+    
     .btn-secondary {
       background: rgba(255, 255, 255, 0.05);
       color: var(--text-primary);
       border-color: rgba(255, 255, 255, 0.2);
       backdrop-filter: blur(10px);
     }
-
+    
     .btn-secondary:hover {
       background: rgba(255, 255, 255, 0.1);
       border-color: rgba(255, 255, 255, 0.3);
       transform: translateY(-2px);
     }
-
+    
     .btn .arrow {
       transition: transform 0.2s ease;
     }
-
+    
     .btn:hover .arrow {
       transform: translate(2px, -2px);
     }
-
+    
+    /* Trading Section Styles */
+    .trading-section {
+      padding: 4rem 0;
+      position: relative;
+      z-index: 1;
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .trading-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+    
+    /* Chart Styles */
+    .chart-container {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 1.5rem;
+      backdrop-filter: blur(10px);
+    }
+    
+    .chart-header {
+      margin-bottom: 1.5rem;
+    }
+    
+    .chart-header h3 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    
+    .chart-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+    
+    .timeframe-selector {
+      display: flex;
+      gap: 0.5rem;
+      background: rgba(255, 255, 255, 0.02);
+      padding: 0.25rem;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+    }
+    
+    .timeframe-btn {
+      padding: 0.5rem 1rem;
+      background: transparent;
+      color: var(--text-secondary);
+      border: none;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .timeframe-btn:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+    }
+    
+    .timeframe-btn.active {
+      background: var(--primary-color);
+      color: var(--bg-dark);
+    }
+    
+    .chart-stats {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+    
+    .stat {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .stat .label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+    }
+    
+    .stat .value {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    
+    .stat .price-value {
+      color: var(--primary-color);
+    }
+    
+    .stat .change {
+      font-size: 0.85rem;
+      font-weight: 500;
+      margin-left: 0.5rem;
+    }
+    
+    .stat .change.positive {
+      color: var(--success-color);
+    }
+    
+    .stat .change.negative {
+      color: var(--error-color);
+    }
+    
+    .chart-wrapper {
+      position: relative;
+      height: 400px;
+      margin-bottom: 1rem;
+    }
+    
+    .chart-footer {
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-color);
+    }
+    
+    .chart-info {
+      display: flex;
+      gap: 2rem;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+    
+    .info-item span {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+    
+    /* Trading Panel Styles */
+    .trading-panel {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 1.5rem;
+      backdrop-filter: blur(10px);
+    }
+    
+    /* Wallet Section */
+    .wallet-section {
+      margin-bottom: 1.5rem;
+    }
+    
+    .wallet-btn {
+      width: 100%;
+      padding: 1rem;
+      background: var(--primary-color);
+      color: var(--bg-dark);
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+    
+    .wallet-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(60, 227, 255, 0.3);
+    }
+    
+    .wallet-info {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+    
+    .wallet-info.hidden {
+      display: none;
+    }
+    
+    .wallet-address {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    
+    .address-text {
+      font-family: monospace;
+      font-size: 0.9rem;
+      color: var(--primary-color);
+    }
+    
+    .disconnect-btn {
+      padding: 0.4rem 0.8rem;
+      background: rgba(248, 113, 113, 0.1);
+      color: var(--error-color);
+      border: 1px solid rgba(248, 113, 113, 0.3);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .disconnect-btn:hover {
+      background: rgba(248, 113, 113, 0.2);
+    }
+    
+    .wallet-balance {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    
+    .balance-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .balance-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    
+    .balance-value {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+    
+    /* Trade Tabs */
+    .trade-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .tab-btn {
+      padding: 0.75rem;
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1px solid transparent;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .tab-btn.active {
+      background: rgba(60, 227, 255, 0.1);
+      color: var(--primary-color);
+      border-color: var(--primary-color);
+    }
+    
+    .tab-btn:hover:not(.active) {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    
+    /* Trade Content */
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    .input-group {
+      margin-bottom: 1rem;
+    }
+    
+    .input-group label {
+      display: block;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+    
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: all 0.2s ease;
+    }
+    
+    .input-wrapper:focus-within {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(60, 227, 255, 0.1);
+    }
+    
+    .input-wrapper input {
+      flex: 1;
+      padding: 1rem;
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      font-size: 1.1rem;
+      font-weight: 600;
+      outline: none;
+    }
+    
+    .input-wrapper input::placeholder {
+      color: var(--text-muted);
+    }
+    
+    .input-suffix {
+      padding-right: 1rem;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+    
+    .input-balance,
+    .input-info {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+    
+    .swap-icon {
+      display: flex;
+      justify-content: center;
+      padding: 1rem 0;
+    }
+    
+    .swap-icon svg {
+      color: var(--primary-color);
+    }
+    
+    .trade-btn {
+      width: 100%;
+      padding: 1.2rem;
+      background: var(--primary-color);
+      color: var(--bg-dark);
+      border: none;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-top: 1.5rem;
+    }
+    
+    .trade-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(60, 227, 255, 0.3);
+    }
+    
+    .trade-btn:disabled {
+      background: rgba(60, 227, 255, 0.3);
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    
+    .trade-info {
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border-color);
+    }
+    
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+    
+    /* Footer */
     footer {
       padding: 2rem 0;
       text-align: center;
@@ -222,7 +606,8 @@
       position: relative;
       z-index: 1;
     }
-
+    
+    /* Animations */
     @keyframes fadeInUp {
       from {
         opacity: 0;
@@ -233,30 +618,52 @@
         transform: translateY(0);
       }
     }
-
+    
+    /* Mobile optimizations */
+    @media (max-width: 968px) {
+      .trading-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .chart-stats {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+      }
+      
+      .stat {
+        align-items: flex-start;
+      }
+    }
+    
     @media (max-width: 768px) {
       .hero {
         padding: 2rem 1rem;
       }
-
+      
       h1 {
         font-size: 2.4rem;
       }
-
+      
       h2 {
         font-size: 1.15rem;
       }
-
+      
       .buttons {
         width: 100%;
       }
-
+      
       .btn {
         width: 100%;
         max-width: 280px;
       }
+      
+      .chart-wrapper {
+        height: 300px;
+      }
     }
-
+    
+    /* Reduced motion */
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: 0.01ms !important;
@@ -265,6 +672,7 @@
       }
     }
   </style>
+
 </head>
 <body>
   <main class="hero">
@@ -274,37 +682,201 @@
         <span>AltaOpera · Bonding Curve Protocol</span>
       </div>
 
-      <h1>Liquidity by Math,<br>Not by Promises.</h1>
+```
+  <h1>Liquidity by Math,<br>Not by Promises.</h1>
+  
+  <h2>
+    AltaOpera is a quadratic bonding curve ERC20 with on-chain exit liquidity,
+    deterministic pricing, and transparent protocol fees.
+  </h2>
+  
+  <div class="content">
+    <p>
+      The contract itself acts as the <span class="highlight">autonomous market maker</span> between the token and ETH.
+      There are no external LPs to withdraw and no DEX pool that can be drained overnight. 
+      Buy and sell prices are fully determined by a mathematical curve.
+    </p>
+    <p>
+      The protocol is fully transparent and auditable. To explore the smart contracts, 
+      understand the mathematical model, or review the security architecture,
+      please refer to the resources below.
+    </p>
+  </div>
+  
+  <div class="buttons">
+    <a href="https://github.com/arabafenice599rae/Alta-Opera-Protocol" class="btn btn-primary" target="_blank" rel="noopener noreferrer">
+      <span>View the Code</span>
+      <span class="arrow">↗</span>
+    </a>
+    <a href="https://github.com/arabafenice599rae/Alta-Opera-Protocol#core-idea" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">
+      <span>Learn How It Works</span>
+    </a>
+  </div>
+</div>
+```
 
-      <h2>
-        AltaOpera is a quadratic bonding curve ERC20 with on-chain exit liquidity,
-        deterministic pricing, and transparent protocol fees.
-      </h2>
+  </main>
 
-      <div class="content">
-        <p>
-          The contract itself acts as the <span class="highlight">autonomous market maker</span> between the token and ETH.
-          There are no external LPs to withdraw and no DEX pool that can be drained overnight.
-          Buy and sell prices are fully determined by a mathematical curve.
-        </p>
-        <p>
-          Code is source-available under a proprietary license by
-          <strong>arabafenice599rae</strong>. To audit the smart contracts or discuss licensing,
-          please refer to the GitHub repository below.
-        </p>
+  <!-- Trading Interface Section -->
+
+  <section class="trading-section">
+    <div class="container">
+      <div class="trading-grid">
+        <!-- Chart Section -->
+        <div class="chart-container">
+          <div class="chart-header">
+            <h3>Price Chart</h3>
+            <div class="chart-controls">
+              <div class="timeframe-selector">
+                <button class="timeframe-btn" data-timeframe="1s">1s</button>
+                <button class="timeframe-btn" data-timeframe="15m">15m</button>
+                <button class="timeframe-btn" data-timeframe="1h">1h</button>
+                <button class="timeframe-btn active" data-timeframe="4h">4h</button>
+                <button class="timeframe-btn" data-timeframe="1d">1D</button>
+              </div>
+              <div class="chart-stats">
+                <div class="stat">
+                  <span class="label">Price</span>
+                  <span class="value price-value" id="currentPrice">0.000156 ETH</span>
+                  <span class="change positive">+12.5%</span>
+                </div>
+                <div class="stat">
+                  <span class="label">24h Volume</span>
+                  <span class="value" id="volume">1,234 ETH</span>
+                </div>
+                <div class="stat">
+                  <span class="label">Market Cap</span>
+                  <span class="value" id="marketCap">156 ETH</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="priceChart"></canvas>
+          </div>
+          <div class="chart-footer">
+            <div class="chart-info">
+              <span class="info-item">High: <span id="highPrice">0.000189</span></span>
+              <span class="info-item">Low: <span id="lowPrice">0.000134</span></span>
+              <span class="info-item">VWAP: <span id="vwapPrice">0.000162</span></span>
+            </div>
+          </div>
+        </div>
+
+```
+    <!-- Trading Panel -->
+    <div class="trading-panel">
+      <div class="wallet-section">
+        <button id="connectWallet" class="wallet-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 18V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2z"></path>
+            <path d="M3 12h18"></path>
+          </svg>
+          <span>Connect Wallet</span>
+        </button>
+        <div id="walletInfo" class="wallet-info hidden">
+          <div class="wallet-address">
+            <span class="address-text" id="walletAddress">0x0000...0000</span>
+            <button class="disconnect-btn" id="disconnectBtn">Disconnect</button>
+          </div>
+          <div class="wallet-balance">
+            <div class="balance-item">
+              <span class="balance-label">ETH</span>
+              <span class="balance-value" id="ethBalance">0.00</span>
+            </div>
+            <div class="balance-item">
+              <span class="balance-label">ALTA</span>
+              <span class="balance-value" id="altaBalance">0.00</span>
+            </div>
+          </div>
+        </div>
       </div>
-
-      <div class="buttons">
-        <a href="https://github.com/arabafenice599rae/Alta-Opera-Protocol" class="btn btn-primary" target="_blank" rel="noopener noreferrer">
-          <span>View the Code</span>
-          <span class="arrow">↗</span>
-        </a>
-        <a href="https://github.com/arabafenice599rae/Alta-Opera-Protocol#core-idea" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">
-          <span>Learn How It Works</span>
-        </a>
+      
+      <div class="trade-tabs">
+        <button class="tab-btn active" data-tab="buy">Buy</button>
+        <button class="tab-btn" data-tab="sell">Sell</button>
+      </div>
+      
+      <div class="trade-content">
+        <!-- Buy Tab -->
+        <div id="buyTab" class="tab-content active">
+          <div class="input-group">
+            <label>You Pay</label>
+            <div class="input-wrapper">
+              <input type="number" id="ethInput" placeholder="0.0" step="0.001" min="0">
+              <span class="input-suffix">ETH</span>
+            </div>
+            <span class="input-balance">Balance: <span id="ethInputBalance">0.00</span> ETH</span>
+          </div>
+          
+          <div class="swap-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M7 16L3 12m0 0l4-4m-4 4h18M17 8l4 4m0 0l-4 4m4-4H3"></path>
+            </svg>
+          </div>
+          
+          <div class="input-group">
+            <label>You Receive</label>
+            <div class="input-wrapper">
+              <input type="number" id="altaOutput" placeholder="0.0" readonly>
+              <span class="input-suffix">ALTA</span>
+            </div>
+            <span class="input-info">Price impact: <span id="priceImpact">0.00%</span></span>
+          </div>
+          
+          <button id="buyBtn" class="trade-btn" disabled>
+            Connect Wallet to Buy
+          </button>
+        </div>
+        
+        <!-- Sell Tab -->
+        <div id="sellTab" class="tab-content">
+          <div class="input-group">
+            <label>You Sell</label>
+            <div class="input-wrapper">
+              <input type="number" id="altaInput" placeholder="0.0" step="1" min="0">
+              <span class="input-suffix">ALTA</span>
+            </div>
+            <span class="input-balance">Balance: <span id="altaInputBalance">0.00</span> ALTA</span>
+          </div>
+          
+          <div class="swap-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M7 16L3 12m0 0l4-4m-4 4h18M17 8l4 4m0 0l-4 4m4-4H3"></path>
+            </svg>
+          </div>
+          
+          <div class="input-group">
+            <label>You Receive</label>
+            <div class="input-wrapper">
+              <input type="number" id="ethOutput" placeholder="0.0" readonly>
+              <span class="input-suffix">ETH</span>
+            </div>
+            <span class="input-info">Price impact: <span id="sellPriceImpact">0.00%</span></span>
+          </div>
+          
+          <button id="sellBtn" class="trade-btn" disabled>
+            Connect Wallet to Sell
+          </button>
+        </div>
+      </div>
+      
+      <div class="trade-info">
+        <div class="info-row">
+          <span>Protocol Fee</span>
+          <span>0.3%</span>
+        </div>
+        <div class="info-row">
+          <span>Slippage Tolerance</span>
+          <span>0.5%</span>
+        </div>
       </div>
     </div>
-  </main>
+  </div>
+</div>
+```
+
+  </section>
 
   <footer>
     <div class="container">
@@ -315,14 +887,430 @@
   <script>
     // Set current year
     document.getElementById('year').textContent = new Date().getFullYear();
-
-    // Optional: simple interactive background effect
-    document.addEventListener('mousemove', (e) => {
-      const x = e.clientX / window.innerWidth;
-      const y = e.clientY / window.innerHeight;
-      document.body.style.background =
-        `radial-gradient(circle at ${x * 100}% ${y * 100}%, #202040 0%, #050509 45%, #000 100%)`;
+    
+    // Add smooth scroll behavior
+    document.documentElement.style.scrollBehavior = 'smooth';
+    
+    // Chart configuration
+    const ctx = document.getElementById('priceChart').getContext('2d');
+    
+    // Generate realistic price data based on timeframe
+    const generatePriceData = (timeframe) => {
+      const data = [];
+      let dataPoints = 100;
+      let interval = 1;
+      let basePrice = 0.000156;
+      let volatility = 0.02;
+      
+      switch(timeframe) {
+        case '1s':
+          dataPoints = 60;
+          interval = 1;
+          volatility = 0.001;
+          break;
+        case '15m':
+          dataPoints = 96;
+          interval = 15;
+          volatility = 0.005;
+          break;
+        case '1h':
+          dataPoints = 168;
+          interval = 60;
+          volatility = 0.01;
+          break;
+        case '4h':
+          dataPoints = 180;
+          interval = 240;
+          volatility = 0.015;
+          break;
+        case '1d':
+          dataPoints = 90;
+          interval = 1440;
+          volatility = 0.02;
+          break;
+      }
+      
+      // Generate realistic price movement
+      let currentPrice = basePrice;
+      const now = Date.now();
+      
+      for (let i = dataPoints; i > 0; i--) {
+        const timestamp = now - (i * interval * 60 * 1000);
+        
+        // Add some trend and randomness
+        const trend = Math.sin(i / dataPoints * Math.PI * 2) * 0.01;
+        const random = (Math.random() - 0.5) * volatility;
+        currentPrice = currentPrice * (1 + trend + random);
+        
+        // Keep price in reasonable bounds
+        currentPrice = Math.max(0.00008, Math.min(0.0003, currentPrice));
+        
+        data.push({
+          x: timestamp,
+          y: currentPrice
+        });
+      }
+      
+      return data;
+    };
+    
+    // Initialize chart
+    let currentTimeframe = '4h';
+    let priceData = generatePriceData(currentTimeframe);
+    
+    const priceChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        datasets: [{
+          label: 'ALTA/ETH',
+          data: priceData,
+          borderColor: '#3ce3ff',
+          backgroundColor: 'rgba(60, 227, 255, 0.1)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.1,
+          pointRadius: 0,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#3ce3ff',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false,
+        },
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            enabled: true,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            padding: 12,
+            borderColor: '#3ce3ff',
+            borderWidth: 1,
+            displayColors: false,
+            callbacks: {
+              title: function(tooltipItems) {
+                const date = new Date(tooltipItems[0].parsed.x);
+                if (currentTimeframe === '1s') {
+                  return date.toLocaleTimeString();
+                } else if (currentTimeframe === '15m' || currentTimeframe === '1h') {
+                  return date.toLocaleString();
+                } else {
+                  return date.toLocaleDateString();
+                }
+              },
+              label: function(context) {
+                return 'Price: ' + context.parsed.y.toFixed(6) + ' ETH';
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            type: 'linear',
+            display: true,
+            grid: {
+              color: 'rgba(255, 255, 255, 0.05)'
+            },
+            ticks: {
+              color: '#888',
+              maxTicksLimit: 6,
+              callback: function(value) {
+                const date = new Date(value);
+                if (currentTimeframe === '1s') {
+                  return date.getSeconds() + 's';
+                } else if (currentTimeframe === '15m') {
+                  return date.getHours() + ':' + String(date.getMinutes()).padStart(2, '0');
+                } else if (currentTimeframe === '1h' || currentTimeframe === '4h') {
+                  return date.getMonth() + 1 + '/' + date.getDate() + ' ' + date.getHours() + ':00';
+                } else {
+                  return (date.getMonth() + 1) + '/' + date.getDate();
+                }
+              }
+            }
+          },
+          y: {
+            display: true,
+            position: 'right',
+            grid: {
+              color: 'rgba(255, 255, 255, 0.05)'
+            },
+            ticks: {
+              color: '#888',
+              callback: function(value) {
+                return value.toFixed(6);
+              }
+            }
+          }
+        }
+      }
     });
+    
+    // Timeframe selector
+    const timeframeBtns = document.querySelectorAll('.timeframe-btn');
+    
+    timeframeBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        timeframeBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        currentTimeframe = btn.getAttribute('data-timeframe');
+        priceData = generatePriceData(currentTimeframe);
+        
+        priceChart.data.datasets[0].data = priceData;
+        priceChart.update('active');
+        
+        // Update stats
+        updatePriceStats();
+      });
+    });
+    
+    // Update price statistics
+    function updatePriceStats() {
+      const prices = priceData.map(d => d.y);
+      const currentPrice = prices[prices.length - 1];
+      const firstPrice = prices[0];
+      const change = ((currentPrice - firstPrice) / firstPrice) * 100;
+      
+      const high = Math.max(...prices);
+      const low = Math.min(...prices);
+      const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
+      
+      // Update DOM
+      document.getElementById('currentPrice').textContent = currentPrice.toFixed(6) + ' ETH';
+      
+      const changeElement = document.querySelector('.change');
+      changeElement.textContent = (change >= 0 ? '+' : '') + change.toFixed(2) + '%';
+      changeElement.className = 'change ' + (change >= 0 ? 'positive' : 'negative');
+      
+      document.getElementById('highPrice').textContent = high.toFixed(6);
+      document.getElementById('lowPrice').textContent = low.toFixed(6);
+      document.getElementById('vwapPrice').textContent = avgPrice.toFixed(6);
+      
+      // Simulate volume and market cap
+      const volume = 1234 + Math.random() * 500;
+      const marketCap = currentPrice * 1000000;
+      
+      document.getElementById('volume').textContent = volume.toFixed(2) + ' ETH';
+      document.getElementById('marketCap').textContent = marketCap.toFixed(2) + ' ETH';
+    }
+    
+    // Auto-update for 1s timeframe
+    let updateInterval;
+    
+    function startLiveUpdate() {
+      if (currentTimeframe === '1s') {
+        updateInterval = setInterval(() => {
+          // Add new data point
+          const lastPrice = priceData[priceData.length - 1].y;
+          const newPrice = lastPrice * (1 + (Math.random() - 0.5) * 0.002);
+          const newPoint = {
+            x: Date.now(),
+            y: Math.max(0.00008, Math.min(0.0003, newPrice))
+          };
+          
+          priceData.push(newPoint);
+          
+          // Keep only last 60 points
+          if (priceData.length > 60) {
+            priceData.shift();
+          }
+          
+          priceChart.data.datasets[0].data = priceData;
+          priceChart.update('none');
+          updatePriceStats();
+        }, 1000);
+      }
+    }
+    
+    function stopLiveUpdate() {
+      if (updateInterval) {
+        clearInterval(updateInterval);
+      }
+    }
+    
+    // Handle timeframe changes
+    timeframeBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        stopLiveUpdate();
+        if (btn.getAttribute('data-timeframe') === '1s') {
+          startLiveUpdate();
+        }
+      });
+    });
+    
+    // Initialize stats
+    updatePriceStats();
+    
+    // Wallet state
+    let walletConnected = false;
+    let walletAddress = '';
+    let ethBalance = 0;
+    let altaBalance = 0;
+    
+    // Tab switching
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetTab = btn.getAttribute('data-tab');
+        
+        tabBtns.forEach(b => b.classList.remove('active'));
+        tabContents.forEach(c => c.classList.remove('active'));
+        
+        btn.classList.add('active');
+        document.getElementById(targetTab + 'Tab').classList.add('active');
+      });
+    });
+    
+    // Wallet connection
+    const connectBtn = document.getElementById('connectWallet');
+    const walletInfo = document.getElementById('walletInfo');
+    const disconnectBtn = document.getElementById('disconnectBtn');
+    
+    connectBtn.addEventListener('click', async () => {
+      // Simulate wallet connection
+      if (typeof window.ethereum !== 'undefined') {
+        try {
+          const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+          walletAddress = accounts[0];
+          walletConnected = true;
+          
+          // Update UI
+          connectBtn.style.display = 'none';
+          walletInfo.classList.remove('hidden');
+          document.getElementById('walletAddress').textContent = 
+            walletAddress.substring(0, 6) + '...' + walletAddress.substring(38);
+          
+          // Simulate balance fetch
+          ethBalance = Math.random() * 10;
+          altaBalance = Math.random() * 100000;
+          
+          document.getElementById('ethBalance').textContent = ethBalance.toFixed(4);
+          document.getElementById('altaBalance').textContent = altaBalance.toLocaleString();
+          document.getElementById('ethInputBalance').textContent = ethBalance.toFixed(4);
+          document.getElementById('altaInputBalance').textContent = altaBalance.toLocaleString();
+          
+          // Enable trade buttons
+          document.getElementById('buyBtn').disabled = false;
+          document.getElementById('buyBtn').textContent = 'Buy ALTA';
+          document.getElementById('sellBtn').disabled = false;
+          document.getElementById('sellBtn').textContent = 'Sell ALTA';
+        } catch (error) {
+          console.error('Error connecting wallet:', error);
+        }
+      } else {
+        alert('Please install MetaMask or another Web3 wallet');
+      }
+    });
+    
+    disconnectBtn.addEventListener('click', () => {
+      walletConnected = false;
+      walletAddress = '';
+      
+      connectBtn.style.display = 'block';
+      walletInfo.classList.add('hidden');
+      
+      document.getElementById('buyBtn').disabled = true;
+      document.getElementById('buyBtn').textContent = 'Connect Wallet to Buy';
+      document.getElementById('sellBtn').disabled = true;
+      document.getElementById('sellBtn').textContent = 'Connect Wallet to Sell';
+    });
+    
+    // Price calculations
+    const k = 0.000001;
+    let totalSupply = 1000000;
+    
+    function calculateBuyPrice(ethAmount) {
+      const currentPrice = k * Math.pow(totalSupply / 1000000, 2);
+      const tokensOut = Math.sqrt((ethAmount / k) + Math.pow(totalSupply / 1000000, 2)) * 1000000 - totalSupply;
+      const avgPrice = ethAmount / tokensOut;
+      const priceImpact = ((avgPrice - currentPrice) / currentPrice) * 100;
+      
+      return { tokensOut, avgPrice, priceImpact };
+    }
+    
+    function calculateSellPrice(tokenAmount) {
+      const currentPrice = k * Math.pow(totalSupply / 1000000, 2);
+      const newSupply = totalSupply - tokenAmount;
+      const ethOut = k * (Math.pow(totalSupply / 1000000, 2) - Math.pow(newSupply / 1000000, 2)) * 1000000;
+      const avgPrice = ethOut / tokenAmount;
+      const priceImpact = ((currentPrice - avgPrice) / currentPrice) * 100;
+      
+      return { ethOut, avgPrice, priceImpact };
+    }
+    
+    // Input handlers
+    const ethInput = document.getElementById('ethInput');
+    const altaOutput = document.getElementById('altaOutput');
+    const priceImpactSpan = document.getElementById('priceImpact');
+    
+    ethInput.addEventListener('input', (e) => {
+      const ethAmount = parseFloat(e.target.value) || 0;
+      if (ethAmount > 0) {
+        const { tokensOut, priceImpact } = calculateBuyPrice(ethAmount);
+        altaOutput.value = tokensOut.toFixed(2);
+        priceImpactSpan.textContent = priceImpact.toFixed(2) + '%';
+        priceImpactSpan.style.color = priceImpact > 5 ? 'var(--error-color)' : 'var(--success-color)';
+      } else {
+        altaOutput.value = '';
+        priceImpactSpan.textContent = '0.00%';
+      }
+    });
+    
+    const altaInput = document.getElementById('altaInput');
+    const ethOutput = document.getElementById('ethOutput');
+    const sellPriceImpactSpan = document.getElementById('sellPriceImpact');
+    
+    altaInput.addEventListener('input', (e) => {
+      const tokenAmount = parseFloat(e.target.value) || 0;
+      if (tokenAmount > 0) {
+        const { ethOut, priceImpact } = calculateSellPrice(tokenAmount);
+        ethOutput.value = ethOut.toFixed(6);
+        sellPriceImpactSpan.textContent = priceImpact.toFixed(2) + '%';
+        sellPriceImpactSpan.style.color = priceImpact > 5 ? 'var(--error-color)' : 'var(--success-color)';
+      } else {
+        ethOutput.value = '';
+        sellPriceImpactSpan.textContent = '0.00%';
+      }
+    });
+    
+    // Trade buttons
+    document.getElementById('buyBtn').addEventListener('click', () => {
+      if (walletConnected && ethInput.value > 0) {
+        alert(`Buying ${altaOutput.value} ALTA for ${ethInput.value} ETH`);
+      }
+    });
+    
+    document.getElementById('sellBtn').addEventListener('click', () => {
+      if (walletConnected && altaInput.value > 0) {
+        alert(`Selling ${altaInput.value} ALTA for ${ethOutput.value} ETH`);
+      }
+    });
+    
+    // Optional: Add interactive glow effect on mouse move
+    let mouseX = 0;
+    let mouseY = 0;
+    
+    document.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX / window.innerWidth;
+      mouseY = e.clientY / window.innerHeight;
+    });
+    
+    function updateBackground() {
+      document.body.style.background = `radial-gradient(circle at ${mouseX * 100}% ${mouseY * 100}%, #202040 0%, #050509 45%, #000 100%)`;
+      requestAnimationFrame(updateBackground);
+    }
+    
+    updateBackground();
   </script>
+
 </body>
 </html>
