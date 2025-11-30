@@ -20,7 +20,7 @@ This repository contains the core **AltaOpera** bonding-curve ERC20 contract.
 In typical DeFi, liquidity depends on:
 
 - third-party LPs,
-- DEX pools (Uniswap, etc.),
+- DEX pools,
 - and the goodwill of a team.
 
 If the pool disappears, late holders are stuck.
