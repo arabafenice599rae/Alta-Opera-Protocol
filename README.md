@@ -1,7 +1,7 @@
 <p align="center">
   <img src="assets/altaopera-logo.svg" alt="AltaOpera Logo" width="140" />
 </p>
-# AltaOpera 
+
 
 **AltaOpera** is an on-chain liquidity engine built on a **quadratic bonding curve**.
 
